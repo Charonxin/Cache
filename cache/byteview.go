@@ -1,4 +1,4 @@
-package Cache
+package cache
 
 // ByteView 表示缓存值
 type ByteView struct {

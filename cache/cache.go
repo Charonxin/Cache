@@ -1,7 +1,7 @@
-package Cache
+package cache
 
 import (
-	"Cache/lru"
+	"Cache/cache/lru"
 	"fmt"
 	"log"
 	"sync"
@@ -88,7 +88,7 @@ func (g *Group) Get(key string) (ByteView, error) {
 	}
 	// 从mainCache中查找缓存，如果存在则返回缓存值。
 	if v, ok := g.mainCache.get(key); ok {
-		log.Println("[Cache] hit")
+		log.Println("[cache] hit")
 		return v, nil
 	}
 	// 如果不存在，调用load方法，load调用getLocally获取元数据，将数据添加到mainCache中

@@ -1,4 +1,4 @@
-package Cache
+package cache
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ func (p *HTTPPool) Log(format string, v ...interface{}) {
 // ServerHTTP首先判断前缀是否含有basePath,约定访问路径为
 // /<basePath>/<groupName>/<key>通过groupName得到group实例，
 // 再使用group.Get(key)获取缓存数据
-func (p *HTTPPool) ServerHTTP(w http.ResponseWriter, r *http.Request) {
+func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(r.URL.Path, p.basePath) {
 		panic("HTTPPool serving unexpected path: " + r.URL.Path)
 	}

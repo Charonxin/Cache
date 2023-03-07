@@ -37,7 +37,7 @@ func (c *Cache) Get(key string) (value Value, ok bool) {
 	return
 }
 
-// RemoveOldest remove the oldest element from the cache
+// RemoveOldest remove the oldest element from the Cache
 func (c *Cache) RemoveOldest() {
 	ele := c.ll.Back()
 	if ele != nil {
@@ -51,7 +51,7 @@ func (c *Cache) RemoveOldest() {
 	}
 }
 
-// Add adds a value to the cache
+// Add adds a value to the Cache
 func (c *Cache) Add(key string, value Value) {
 	if ele, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(ele)
