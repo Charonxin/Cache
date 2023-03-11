@@ -1,7 +1,9 @@
 package cache
 
 import (
+	pb "Cache/cache/cachepb/cachepb"
 	"Cache/cache/lru"
+	"Cache/cache/singleflight"
 	"fmt"
 	"log"
 	"sync"
@@ -53,6 +55,8 @@ type Group struct {
 	getter    Getter
 	mainCache cache
 	peers     PeerPicker
+	//	这个保证了只会处理一次请求
+	loader *singleflight.Group
 }
 
 func (g *Group) RegisterPeers(peers PeerPicker) {
@@ -78,6 +82,7 @@ func NewGroup(name string, cacheByte int64, getter Getter) *Group {
 		name:      name,
 		getter:    getter,
 		mainCache: cache{cacheBytes: cacheByte},
+		loader:    &singleflight.Group{},
 	}
 	groups[name] = g
 	return g
@@ -104,24 +109,33 @@ func (g *Group) Get(key string) (ByteView, error) {
 }
 
 func (g *Group) load(key string) (value ByteView, err error) {
-	if g.peers != nil {
-		if peer, ok := g.peers.PickPeer(key); ok {
-			if value, err = g.getFromPeer(peer, key); err != nil {
-				return value, nil
+	view, err := g.loader.Do(key, func() (interface{}, error) {
+		if g.peers != nil {
+			if peer, ok := g.peers.PickPeer(key); ok {
+				if value, err = g.getFromPeer(peer, key); err != nil {
+					return value, nil
+				}
+				log.Println("[Cache] Failed to get from peer", err)
 			}
 		}
+		return g.getLocally(key)
+	})
+	if err == nil {
+		return view.(ByteView), nil
 	}
-
-	return g.getLocally(key)
+	return
 }
 
 func (g *Group) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
-	bytes, err := peer.Get(g.name, key)
+	req := &pb.Request{Group: g.name, Key: key}
+	res := &pb.Response{}
+	err := peer.Get(req, res)
+	//bytes, err := peer.Get(g.name, key)
 
 	if err != nil {
 		return ByteView{}, err
 	}
-	return ByteView{b: bytes}, nil
+	return ByteView{b: res.Value}, nil
 }
 
 func (g *Group) getLocally(key string) (ByteView, error) {
